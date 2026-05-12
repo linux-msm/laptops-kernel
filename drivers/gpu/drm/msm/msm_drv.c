@@ -137,6 +137,19 @@ bool msm_separate_gpu_kms_components(void)
 	}
 }
 
+bool msm_gpu_use_separate_drm_dev(struct platform_device *pdev)
+{
+	struct device_node *node;
+
+	if (!pdev)
+		return msm_separate_gpu_kms_components();
+
+	node = pdev->dev.of_node;
+
+	return of_device_is_compatible(node, "amd,imageon") ||
+	       (msm_separate_gpu_kms_components() && adreno_has_gpu(node));
+}
+
 static int msm_drm_uninit(struct device *dev, const struct component_ops *gpu_ops)
 {
 	struct platform_device *pdev = to_platform_device(dev);
@@ -1113,7 +1126,7 @@ static int add_gpu_components(struct device *dev,
 static int msm_drm_bind(struct device *dev)
 {
 	return msm_drm_init(dev,
-			    msm_separate_gpu_kms_components() ?
+			    msm_gpu_use_separate_drm_dev(NULL) ?
 				    &msm_kms_driver :
 				    &msm_driver,
 			    NULL);
@@ -1152,7 +1165,7 @@ int msm_drv_probe(struct device *master_dev,
 			return ret;
 	}
 
-	if (!msm_separate_gpu_kms_components()) {
+	if (!msm_gpu_use_separate_drm_dev(NULL)) {
 		ret = add_gpu_components(master_dev, &match);
 		if (ret)
 			return ret;
