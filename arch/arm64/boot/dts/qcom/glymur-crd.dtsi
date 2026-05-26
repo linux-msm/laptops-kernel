@@ -543,6 +543,13 @@
 		function = "normal";
 		bias-disable;
 	};
+
+	key_vol_up_default: key-vol-up-default-state {
+		pins = "gpio6";
+		function = "normal";
+		output-disable;
+		bias-pull-up;
+	};
 };
 
 &pmh0110_f_e1_gpios {
@@ -550,15 +557,6 @@
 		pins = "gpio14";
 		function = "normal";
 		bias-disable;
-	};
-};
-
-&pmh0101_gpios {
-	key_vol_up_default: key-vol-up-default-state {
-		pins = "gpio6";
-		function = "normal";
-		output-disable;
-		bias-pull-up;
 	};
 };
 
