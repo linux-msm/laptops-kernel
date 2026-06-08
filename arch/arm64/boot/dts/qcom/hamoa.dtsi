@@ -17,7 +17,6 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/mailbox/qcom-ipcc.h>
 #include <dt-bindings/phy/phy.h>
-#include <dt-bindings/phy/phy-qcom-mipi-csi2.h>
 #include <dt-bindings/phy/phy-qcom-qmp.h>
 #include <dt-bindings/power/qcom,rpmhpd.h>
 #include <dt-bindings/power/qcom-rpmpd.h>
@@ -5781,10 +5780,10 @@
 			#size-cells = <2>;
 			ranges;
 
-			phys = <&csiphy0 PHY_QCOM_CSI2_MODE_DPHY>,
-			       <&csiphy1 PHY_QCOM_CSI2_MODE_DPHY>,
-			       <&csiphy2 PHY_QCOM_CSI2_MODE_DPHY>,
-			       <&csiphy4 PHY_QCOM_CSI2_MODE_DPHY>;
+			phys = <&csiphy0 PHY_TYPE_DPHY>,
+			       <&csiphy1 PHY_TYPE_DPHY>,
+			       <&csiphy2 PHY_TYPE_DPHY>,
+			       <&csiphy4 PHY_TYPE_DPHY>;
 			phy-names = "csiphy0",
 				    "csiphy1",
 				    "csiphy2",
