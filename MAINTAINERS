@@ -23026,6 +23026,7 @@ L:	linux-arm-msm@vger.kernel.org
 S:	Maintained
 F:	Documentation/devicetree/bindings/power/limits/power-limit-controller.yaml
 F:	Documentation/devicetree/bindings/power/limits/qcom,glymur-spel.yaml
+F:	drivers/powercap/qcom_spel.c
 
 QUALCOMM TEE (QCOMTEE) DRIVER
 M:	Amirreza Zarrabi <amirreza.zarrabi@oss.qualcomm.com>
