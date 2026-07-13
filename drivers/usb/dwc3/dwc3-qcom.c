@@ -717,7 +717,7 @@ static int dwc3_qcom_probe(struct platform_device *pdev)
 	if (ret)
 		goto clk_disable;
 
-	qcom->has_eusb2_phy = device_property_read_bool(dev, "qcom,has-eusb2-phy");
+	qcom->has_eusb2_phy = true;//device_property_read_bool(dev, "qcom,has-eusb2-phy");
 	qcom->mode = usb_get_dr_mode(dev);
 
 	if (qcom->mode == USB_DR_MODE_HOST) {
