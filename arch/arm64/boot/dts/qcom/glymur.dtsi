@@ -2696,7 +2696,6 @@
 			};
 		};
 
-
 		/* cluster0 */
 		bwmon_cluster0: pmu@100c400 {
 			compatible = "qcom,glymur-cpu-bwmon", "qcom,sdm845-bwmon";
