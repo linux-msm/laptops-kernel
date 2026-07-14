@@ -6823,7 +6823,7 @@ static struct clk_branch gcc_usb3_tert_phy_aux_clk = {
 
 static struct clk_branch gcc_usb3_tert_phy_com_aux_clk = {
 	.halt_reg = 0xe1074,
-	.halt_check = BRANCH_HALT,
+	.halt_check = BRANCH_HALT_SKIP, // TODO: FIXME HACK
 	.clkr = {
 		.enable_reg = 0xe1074,
 		.enable_mask = BIT(0),
