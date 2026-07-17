@@ -729,6 +729,16 @@
 	};
 };
 
+&iris {
+	firmware-name = "qcom/glymur/ASUSTeK/UX3607OA/qcvss8480.mbn";
+
+	status = "okay";
+
+	firmware {
+		iommus = <&apps_smmu 0x19e2 0x0>;
+	};
+};
+
 &pmh0110_f_e0_gpios {
 	misc_3p3_reg_en: misc-3p3-reg-en-state {
 		pins = "gpio6";
@@ -898,11 +908,13 @@
 &smb2370_j_e2_eusb2_repeater {
 	vdd18-supply = <&vreg_l15b_e0>;
 	vdd3-supply = <&vreg_l7b_e0>;
+	vdd12-supply = <&vreg_l4c_e0>;
 };
 
 &smb2370_k_e2_eusb2_repeater {
 	vdd18-supply = <&vreg_l15b_e0>;
 	vdd3-supply = <&vreg_l7b_e0>;
+	vdd12-supply = <&vreg_l4c_e0>;
 };
 
 &swr0 {
