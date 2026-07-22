@@ -41,22 +41,47 @@ struct pm8008_regulator_data {
 	const struct linear_range	*voltage_range;
 };
 
+struct pm8008_match_data {
+	const bool has_stepper_ctl_reg;
+	const struct pm8008_regulator_data *regulator_data;
+	const int num_regulators;
+};
+
 static const struct linear_range nldo_ranges[] = {
 	REGULATOR_LINEAR_RANGE(528000, 0, 122, 8000),
 };
 
-static const struct linear_range pldo_ranges[] = {
+static const struct linear_range mv300_pldo_ranges[] = {
+	REGULATOR_LINEAR_RANGE(1800000, 0, 189, 8000),
+};
+
+static const struct linear_range mv400_pldo_ranges[] = {
 	REGULATOR_LINEAR_RANGE(1504000, 0, 237, 8000),
+};
+
+static const struct linear_range mv600_pldo_ranges[] = {
+	/* TODO: 1.2 V under specific conditions */
+	REGULATOR_LINEAR_RANGE(1504000, 0, 255, 8000),
 };
 
 static const struct pm8008_regulator_data pm8008_reg_data[] = {
 	{ "ldo1", "vdd-l1-l2", 0x4000, 225000, nldo_ranges, },
 	{ "ldo2", "vdd-l1-l2", 0x4100, 225000, nldo_ranges, },
-	{ "ldo3", "vdd-l3-l4", 0x4200, 300000, pldo_ranges, },
-	{ "ldo4", "vdd-l3-l4", 0x4300, 300000, pldo_ranges, },
-	{ "ldo5", "vdd-l5",    0x4400, 200000, pldo_ranges, },
-	{ "ldo6", "vdd-l6",    0x4500, 200000, pldo_ranges, },
-	{ "ldo7", "vdd-l7",    0x4600, 200000, pldo_ranges, },
+	{ "ldo3", "vdd-l3-l4", 0x4200, 300000, mv400_pldo_ranges, },
+	{ "ldo4", "vdd-l3-l4", 0x4300, 300000, mv400_pldo_ranges, },
+	{ "ldo5", "vdd-l5",    0x4400, 200000, mv400_pldo_ranges, },
+	{ "ldo6", "vdd-l6",    0x4500, 200000, mv400_pldo_ranges, },
+	{ "ldo7", "vdd-l7",    0x4600, 200000, mv400_pldo_ranges, },
+};
+
+static const struct pm8008_regulator_data pm8010_reg_data[] = {
+	{ "ldo1", "vdd-l1-l2", 0x4000, 172000, nldo_ranges, },
+	{ "ldo2", "vdd-l1-l2", 0x4100, 172000, nldo_ranges, },
+	{ "ldo3", "vdd-l3-l4", 0x4200, 80000, mv300_pldo_ranges, },
+	{ "ldo4", "vdd-l3-l4", 0x4300, 80000, mv300_pldo_ranges, },
+	{ "ldo5", "vdd-l5",    0x4400, 296000, mv600_pldo_ranges, },
+	{ "ldo6", "vdd-l6",    0x4500, 80000, mv300_pldo_ranges, },
+	{ "ldo7", "vdd-l7",    0x4600, 296000, mv600_pldo_ranges, },
 };
 
 static int pm8008_regulator_set_voltage_sel(struct regulator_dev *rdev, unsigned int sel)
@@ -110,6 +135,7 @@ static const struct regulator_ops pm8008_regulator_ops = {
 
 static int pm8008_regulator_probe(struct platform_device *pdev)
 {
+	const struct pm8008_match_data *match_data;
 	const struct pm8008_regulator_data *data;
 	struct regulator_config config = {};
 	struct device *dev = &pdev->dev;
@@ -120,12 +146,16 @@ static int pm8008_regulator_probe(struct platform_device *pdev)
 	unsigned int val;
 	int ret, i;
 
+	match_data = (const struct pm8008_match_data *)platform_get_device_id(pdev)->driver_data;
+	if (!match_data)
+		return dev_err_probe(dev, -ENODATA, "Missing driver match data\n");
+
 	regmap = dev_get_regmap(dev->parent, "secondary");
 	if (!regmap)
 		return -EINVAL;
 
-	for (i = 0; i < ARRAY_SIZE(pm8008_reg_data); i++) {
-		data = &pm8008_reg_data[i];
+	for (i = 0; i < match_data->num_regulators; i++) {
+		data = &match_data->regulator_data[i];
 
 		preg = devm_kzalloc(dev, sizeof(*preg), GFP_KERNEL);
 		if (!preg)
@@ -150,13 +180,17 @@ static int pm8008_regulator_probe(struct platform_device *pdev)
 		desc->min_uV = desc->linear_ranges[0].min;
 		desc->n_voltages = linear_range_values_in_range(&desc->linear_ranges[0]);
 
-		ret = regmap_read(regmap, preg->base + LDO_STEPPER_CTL_REG, &val);
-		if (ret < 0) {
-			dev_err(dev, "failed to read step rate: %d\n", ret);
-			return ret;
+		if (match_data->has_stepper_ctl_reg) {
+			ret = regmap_read(regmap, preg->base + LDO_STEPPER_CTL_REG, &val);
+			if (ret < 0) {
+				dev_err(dev, "failed to read step rate: %d\n", ret);
+				return ret;
+			}
+			val &= STEP_RATE_MASK;
+			desc->ramp_delay = DEFAULT_VOLTAGE_STEPPER_RATE >> val;
+		} else {
+			desc->ramp_delay = DEFAULT_VOLTAGE_STEPPER_RATE;
 		}
-		val &= STEP_RATE_MASK;
-		desc->ramp_delay = DEFAULT_VOLTAGE_STEPPER_RATE >> val;
 
 		desc->min_dropout_uV = data->min_dropout_uV;
 
@@ -179,8 +213,21 @@ static int pm8008_regulator_probe(struct platform_device *pdev)
 	return 0;
 }
 
+static const struct pm8008_match_data pm8008_data = {
+	.has_stepper_ctl_reg = true,
+	.regulator_data = pm8008_reg_data,
+	.num_regulators = ARRAY_SIZE(pm8008_reg_data),
+};
+
+static const struct pm8008_match_data pm8010_data = {
+	.has_stepper_ctl_reg = false,
+	.regulator_data = pm8010_reg_data,
+	.num_regulators = ARRAY_SIZE(pm8010_reg_data),
+};
+
 static const struct platform_device_id pm8008_regulator_id_table[] = {
-	{ .name = "pm8008-regulator" },
+	{ .name = "pm8008-regulator", .driver_data = (kernel_ulong_t)&pm8008_data },
+	{ .name = "pm8010-regulator", .driver_data = (kernel_ulong_t)&pm8010_data },
 	{ }
 };
 MODULE_DEVICE_TABLE(platform, pm8008_regulator_id_table);
