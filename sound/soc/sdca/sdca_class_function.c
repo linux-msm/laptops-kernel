@@ -143,6 +143,14 @@ static int class_function_sdw_add_peripheral(struct snd_pcm_substream *substream
 	snd_sdw_params_to_config(substream, params, &sconfig, &pconfig);
 
 	/*
+	 * Defer BPS selection to the per-port values programmed by
+	 * qcom_swrm_compute_params() so a single stream can carry ports
+	 * with different wire widths (e.g. WCD9378 HPH DP6 2-bit PDM +
+	 * DP7 8-bit PCM envelope).
+	 */
+	sconfig.bps = 0;
+
+	/*
 	 * FIXME: As also noted in sdca_asoc_get_port(), currently only
 	 * a single unshared port is supported for each DAI.
 	 */
