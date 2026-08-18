@@ -776,16 +776,6 @@
 	};
 };
 
-&iris {
-	firmware-name = "qcom/glymur/ASUSTeK/UX3607OA/qcvss8480.mbn";
-
-	status = "okay";
-
-	firmware {
-		iommus = <&apps_smmu 0x19e2 0x0>;
-	};
-};
-
 &pmh0110_f_e0_gpios {
 	misc_3p3_reg_en: misc-3p3-reg-en-state {
 		pins = "gpio6";
