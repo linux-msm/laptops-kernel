@@ -2038,6 +2038,11 @@ static int wsa884x_get_reset(struct device *dev, struct wsa884x_priv *wsa884x)
 	return 0;
 }
 
+static void wsa884x_pm_runtime_disable(void *data)
+{
+	pm_runtime_disable(data);
+}
+
 static int wsa884x_probe(struct sdw_slave *pdev,
 			 const struct sdw_device_id *id)
 {
@@ -2125,6 +2130,19 @@ static int wsa884x_probe(struct sdw_slave *pdev,
 	pm_runtime_mark_last_busy(dev);
 	pm_runtime_set_active(dev);
 	pm_runtime_enable(dev);
+
+	/*
+	 * Every other resource acquired above is devm-managed and unwound on
+	 * detach. This one was not, so a forced device_reprobe() (see
+	 * drivers/soundwire/qcom.c: qcom_swrm_reprobe_unattached_slaves())
+	 * calls pm_runtime_enable() a second time on a device that was never
+	 * balanced by pm_runtime_disable() on the first detach, producing
+	 * "Unbalanced pm_runtime_enable!" and a codec left in a broken
+	 * runtime-PM state -- silent on that channel from then on.
+	 */
+	ret = devm_add_action_or_reset(dev, wsa884x_pm_runtime_disable, dev);
+	if (ret)
+		return ret;
 
 	return devm_snd_soc_register_component(dev,
 					       &wsa884x_component_drv,
