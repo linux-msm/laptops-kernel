@@ -73,10 +73,10 @@ properties:
     $ref: /schemas/types.yaml#/definitions/uint32-array
 
   "#address-cells":
-    const: 1
+    enum: [1, 2]
 
   "#size-cells":
-    const: 0
+    enum: [0, 2]
 
 patternProperties:
   "(compute-)?cb@[0-9]*$":
@@ -97,6 +97,14 @@ patternProperties:
       iommus:
         minItems: 1
         maxItems: 10
+
+      memory-region:
+        maxItems: 1
+        description:
+          Phandle to a reserved-memory node whose iommu-addresses property
+          blocks the lower IOVA range, forcing allocations into the extended
+          address space. Its presence marks this context bank as an extended
+          mapping bank.
 
       qcom,nsessions:
         $ref: /schemas/types.yaml#/definitions/uint32
