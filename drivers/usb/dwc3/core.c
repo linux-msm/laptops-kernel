@@ -1712,6 +1712,10 @@ static void dwc3_get_software_properties(struct dwc3 *dwc,
 					       &gsbuscfg0_reqinfo);
 		if (!ret)
 			dwc->gsbuscfg0_reqinfo = gsbuscfg0_reqinfo;
+
+		if (!dwc->xhci_reset_on_resume &&
+		    device_property_read_bool(tmpdev, "xhci-reset-on-resume"))
+			dwc->xhci_reset_on_resume = true;
 	}
 }
 

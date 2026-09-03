@@ -1172,6 +1172,10 @@ struct dwc3_glue_ops {
  * @suspended: set to track suspend event due to U3/L2.
  * @susphy_state: state of DWC3_GUSB2PHYCFG_SUSPHY + DWC3_GUSB3PIPECTL_SUSPHY
  *		  before PM suspend.
+ * @xhci_reset_on_resume: Enable XHCI_RESET_ON_RESUME quirk for the xHCI
+ *			  host controller. Set to true for platforms where
+ *			  the USB controller loses power during system suspend,
+ *			  requiring complete reinitialization on resume.
  * @imod_interval: set the interrupt moderation interval in 250ns
  *			increments or 0 to disable.
  * @max_cfg_eps: current max number of IN eps used across all USB configs.
@@ -1420,6 +1424,7 @@ struct dwc3 {
 	unsigned		wakeup_configured:1;
 	unsigned		suspended:1;
 	unsigned		susphy_state:1;
+	unsigned		xhci_reset_on_resume:1;
 
 	u16			imod_interval;
 
