@@ -1,0 +1,136 @@
+diff a/arch/arm64/boot/dts/qcom/glymur.dtsi b/arch/arm64/boot/dts/qcom/glymur.dtsi	(rejected hunks)
+@@ -7015,6 +7089,134 @@ rx-pins {
+ 					bias-disable;
+ 				};
+ 			};
++
++			cci0_0_default: cci0-0-default-state {
++				sda-pins {
++					pins = "gpio101";
++					function = "cci_i2c_sda";
++					drive-strength = <2>;
++					bias-pull-up = <2200>;
++				};
++
++				scl-pins {
++					pins = "gpio102";
++					function = "cci_i2c_scl";
++					drive-strength = <2>;
++					bias-pull-up = <2200>;
++				};
++			};
++
++			cci0_0_sleep: cci0-0-sleep-state {
++				sda-pins {
++					pins = "gpio101";
++					function = "cci_i2c_sda";
++					drive-strength = <2>;
++					bias-pull-down;
++				};
++
++				scl-pins {
++					pins = "gpio102";
++					function = "cci_i2c_scl";
++					drive-strength = <2>;
++					bias-pull-down;
++				};
++			};
++
++			cci0_1_default: cci0-1-default-state {
++				sda-pins {
++					pins = "gpio103";
++					function = "cci_i2c_sda";
++					drive-strength = <2>;
++					bias-pull-up = <2200>;
++				};
++
++				scl-pins {
++					pins = "gpio104";
++					function = "cci_i2c_scl";
++					drive-strength = <2>;
++					bias-pull-up = <2200>;
++				};
++			};
++
++			cci0_1_sleep: cci0-1-sleep-state {
++				sda-pins {
++					pins = "gpio103";
++					function = "cci_i2c_sda";
++					drive-strength = <2>;
++					bias-pull-down;
++				};
++
++				scl-pins {
++					pins = "gpio104";
++					function = "cci_i2c_scl";
++					drive-strength = <2>;
++					bias-pull-down;
++				};
++			};
++
++			cci1_0_default: cci1-0-default-state {
++				sda-pins {
++					pins = "gpio105";
++					function = "cci_i2c_sda";
++					drive-strength = <2>;
++					bias-pull-up = <2200>;
++				};
++
++				scl-pins {
++					pins = "gpio106";
++					function = "cci_i2c_scl";
++					drive-strength = <2>;
++					bias-pull-up = <2200>;
++				};
++			};
++
++			cci1_0_sleep: cci1-0-sleep-state {
++				sda-pins {
++					pins = "gpio105";
++					function = "cci_i2c_sda";
++					drive-strength = <2>;
++					bias-pull-down;
++				};
++
++				scl-pins {
++					pins = "gpio106";
++					function = "cci_i2c_scl";
++					drive-strength = <2>;
++					bias-pull-down;
++				};
++			};
++
++			cci1_1_default: cci1-1-default-state {
++				sda-pins {
++					pins = "gpio235";
++					function = "asc_cci";
++					drive-strength = <2>;
++					bias-pull-up = <2200>;
++				};
++
++				scl-pins {
++					pins = "gpio236";
++					function = "asc_cci";
++					drive-strength = <2>;
++					bias-pull-up = <2200>;
++				};
++			};
++
++			cci1_1_sleep: cci1-1-sleep-state {
++				sda-pins {
++					pins = "gpio235";
++					function = "asc_cci";
++					drive-strength = <2>;
++					bias-pull-down;
++				};
++
++				scl-pins {
++					pins = "gpio236";
++					function = "asc_cci";
++					drive-strength = <2>;
++					bias-pull-down;
++				};
++			};
+ 		};
+ 
+ 		ctcu@10001000 {
