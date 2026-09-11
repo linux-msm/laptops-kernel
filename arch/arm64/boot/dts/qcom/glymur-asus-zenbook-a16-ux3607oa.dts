@@ -1052,7 +1052,6 @@
 };
 
 &pmk8850_rtc {
-	qcom,uefi-rtc-info;
 	qcom,no-alarm;
 };
 
