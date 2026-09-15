@@ -714,7 +714,7 @@ static int dwc3_qcom_probe(struct platform_device *pdev)
 		}
 		phy = NULL;
 	}
-	qcom->has_eusb2_phy = (phy_get_type(phy) == PHY_TYPE_EUSB2);
+	qcom->has_eusb2_phy = true;//(phy_get_type(phy) == PHY_TYPE_EUSB2);
 
 	qcom->mode = usb_get_dr_mode(dev);
 
