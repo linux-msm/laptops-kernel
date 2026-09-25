@@ -1393,21 +1393,25 @@ static int sdw_config_stream(struct device *dev,
 	 * If rate/bps is zero, it means the values are not set, so skip
 	 * comparison and allow the value to be set and stored in stream
 	 */
-	if (stream->params.rate &&
+	if (stream->params.rate && stream_config->frame_rate &&
 	    stream->params.rate != stream_config->frame_rate) {
-		dev_err(dev, "rate not matching, stream:%s\n", stream->name);
+		dev_err(dev, "rate not matching, stream:%s %d vs %d\n",
+			stream->name, stream->params.rate, stream_config->frame_rate);
 		return -EINVAL;
 	}
 
-	if (stream->params.bps &&
+	if (stream->params.bps && stream_config->bps &&
 	    stream->params.bps != stream_config->bps) {
-		dev_err(dev, "bps not matching, stream:%s %d vs %d\n", stream->name, stream->params.bps, stream_config->bps);
+		dev_err(dev, "bps not matching, stream:%s %d vs %d\n",
+			stream->name, stream->params.bps, stream_config->bps);
 		return -EINVAL;
 	}
 
 	stream->type = stream_config->type;
-	stream->params.rate = stream_config->frame_rate;
-	stream->params.bps = stream_config->bps;
+	if (stream_config->frame_rate)
+		stream->params.rate = stream_config->frame_rate;
+	if (stream_config->bps)
+		stream->params.bps = stream_config->bps;
 
 	/* TODO: Update this check during Device-device support */
 	if (is_slave)
