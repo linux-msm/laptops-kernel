@@ -224,6 +224,13 @@ static int msm_iommu_pagetable_map(struct msm_mmu *mmu, u64 iova,
 		}
 	}
 
+	/* The sg_table ended before the requested range was covered */
+	if (len) {
+		if (addr != iova)
+			msm_iommu_pagetable_unmap(mmu, iova, addr - iova);
+		return -EINVAL;
+	}
+
 	return 0;
 }
 
