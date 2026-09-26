@@ -1327,7 +1327,7 @@ struct drm_gem_object *msm_gem_import(struct drm_device *dev,
 	npages = size / PAGE_SIZE;
 
 	msm_obj = to_msm_bo(obj);
-	msm_obj->pages = kvmalloc_objs(struct page *, npages);
+	msm_obj->pages = kvzalloc_objs(struct page *, npages);
 	if (!msm_obj->pages) {
 		ret = -ENOMEM;
 		goto fail;
@@ -1335,6 +1335,19 @@ struct drm_gem_object *msm_gem_import(struct drm_device *dev,
 
 	ret = drm_prime_sg_to_page_array(sgt, msm_obj->pages, npages);
 	if (ret) {
+		goto fail;
+	}
+
+	/*
+	 * Both the GPU and the display IOMMU mappings are built from the page
+	 * and length of each sg entry, so a table that does not describe every
+	 * page of the buffer (such as the copy handed out with
+	 * CONFIG_DMABUF_DEBUG) cannot be mapped.
+	 */
+	if (!npages || !msm_obj->pages[npages - 1]) {
+		drm_warn_once(dev, "%s: dma-buf sg_table lacks page info, import rejected\n",
+			      dmabuf->exp_name);
+		ret = -EINVAL;
 		goto fail;
 	}
 
