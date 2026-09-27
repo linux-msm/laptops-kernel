@@ -642,6 +642,7 @@ static int dwc3_qcom_probe(struct platform_device *pdev)
 	bool			ignore_pipe_clk;
 	bool			wakeup_source;
 	struct phy		*phy;
+	bool			glymur;
 
 	qcom = devm_kzalloc(&pdev->dev, sizeof(*qcom), GFP_KERNEL);
 	if (!qcom)
@@ -741,6 +742,13 @@ static int dwc3_qcom_probe(struct platform_device *pdev)
 	probe_data.res = &res;
 	probe_data.ignore_clocks_and_resets = true;
 	probe_data.properties = DWC3_DEFAULT_PROPERTIES;
+
+	/* Glymur powers the controllers down in s2idle: xHCI state is lost. */
+	glymur = of_device_is_compatible(dev->of_node, "qcom,glymur-dwc3") ||
+		 of_device_is_compatible(dev->of_node, "qcom,glymur-dwc3-mp");
+	if (glymur)
+		qcom->dwc.xhci_reset_on_resume = true;
+
 	ret = dwc3_core_probe(&probe_data);
 	if (ret)  {
 		ret = dev_err_probe(dev, ret, "failed to register DWC3 Core\n");
@@ -751,7 +759,9 @@ static int dwc3_qcom_probe(struct platform_device *pdev)
 	if (ret)
 		goto remove_core;
 
-	wakeup_source = of_property_read_bool(dev->of_node, "wakeup-source");
+	/* A controller that loses power in s2idle cannot wake the system. */
+	wakeup_source = !glymur &&
+			of_property_read_bool(dev->of_node, "wakeup-source");
 	device_init_wakeup(&pdev->dev, wakeup_source);
 
 	qcom->is_suspended = false;
