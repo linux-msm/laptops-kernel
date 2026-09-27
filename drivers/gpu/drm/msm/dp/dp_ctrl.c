@@ -139,6 +139,8 @@ struct msm_dp_ctrl_private {
 	bool core_clks_on;
 	bool link_clks_on;
 	bool stream_clks_on;
+
+	bool is_edp;
 };
 
 static inline u32 msm_dp_read_ahb(const struct msm_dp_ctrl_private *ctrl, u32 offset)
@@ -2438,9 +2440,15 @@ int msm_dp_ctrl_on_link(struct msm_dp_ctrl *msm_dp_ctrl,
 
 			drm_dp_dpcd_read_link_status(ctrl->aux, link_status);
 
+			/*
+			 * An eDP panel is driven at its native lane count; fewer
+			 * lanes cannot carry its mode, so retry equalization as is.
+			 */
 			if (!drm_dp_clock_recovery_ok(link_status,
 					ctrl->link->link_params.num_lanes))
 				rc = msm_dp_ctrl_link_rate_down_shift(ctrl);
+			else if (ctrl->is_edp)
+				rc = 0;
 			else
 				rc = msm_dp_ctrl_link_lane_down_shift(ctrl, panel);
 
@@ -2795,7 +2803,8 @@ struct msm_dp_ctrl *msm_dp_ctrl_get(struct device *dev, struct msm_dp_link *link
 			struct drm_dp_aux *aux,
 			struct phy *phy,
 			void __iomem *ahb_base,
-			void __iomem *link_base)
+			void __iomem *link_base,
+			bool is_edp)
 {
 	struct msm_dp_ctrl_private *ctrl;
 	int ret;
@@ -2834,6 +2843,7 @@ struct msm_dp_ctrl *msm_dp_ctrl_get(struct device *dev, struct msm_dp_link *link
 	ctrl->phy      = phy;
 	ctrl->ahb_base = ahb_base;
 	ctrl->link_base = link_base;
+	ctrl->is_edp = is_edp;
 
 	ret = msm_dp_ctrl_clk_init(&ctrl->msm_dp_ctrl);
 	if (ret) {
