@@ -94,9 +94,6 @@
 
 		pmk8850_pwm: pwm {
 			compatible = "qcom,pmk8850-pwm";
-
-			#address-cells = <1>;
-			#size-cells = <0>;
 			#pwm-cells = <2>;
 
 			status = "disabled";
