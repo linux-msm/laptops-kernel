@@ -356,7 +356,7 @@ static void dwc3_qcom_enable_interrupts(struct dwc3_qcom *qcom)
 		dwc3_qcom_enable_port_interrupts(qcom, i);
 }
 
-static int dwc3_qcom_suspend(struct dwc3_qcom *qcom, bool wakeup)
+static int dwc3_qcom_suspend(struct dwc3_qcom *qcom, bool wakeup, bool check_l2)
 {
 	u32 val;
 	int i, ret;
@@ -364,10 +364,13 @@ static int dwc3_qcom_suspend(struct dwc3_qcom *qcom, bool wakeup)
 	if (qcom->is_suspended)
 		return 0;
 
-	for (i = 0; i < qcom->num_ports; i++) {
-		val = readl(qcom->qscratch_base + pwr_evnt_irq_stat_reg[i]);
-		if (!(val & PWR_EVNT_LPM_IN_L2_MASK))
-			dev_err(qcom->dev, "port-%d HS-PHY not in L2\n", i + 1);
+	/* L2 is only expected when the core leaves the PHYs powered. */
+	if (check_l2) {
+		for (i = 0; i < qcom->num_ports; i++) {
+			val = readl(qcom->qscratch_base + pwr_evnt_irq_stat_reg[i]);
+			if (!(val & PWR_EVNT_LPM_IN_L2_MASK))
+				dev_err(qcom->dev, "port-%d HS-PHY not in L2\n", i + 1);
+		}
 	}
 	clk_bulk_disable_unprepare(qcom->num_clocks, qcom->clks);
 
@@ -789,7 +792,9 @@ static int dwc3_qcom_pm_suspend(struct device *dev)
 	if (ret)
 		return ret;
 
-	ret = dwc3_qcom_suspend(qcom, wakeup);
+	ret = dwc3_qcom_suspend(qcom, wakeup,
+			       dwc->current_dr_role == DWC3_GCTL_PRTCAP_HOST &&
+			       wakeup && !dwc->needs_full_reinit);
 	if (ret)
 		return ret;
 
@@ -842,7 +847,8 @@ static int dwc3_qcom_runtime_suspend(struct device *dev)
 	if (ret)
 		return ret;
 
-	return dwc3_qcom_suspend(qcom, true);
+	return dwc3_qcom_suspend(qcom, true,
+				 dwc->current_dr_role == DWC3_GCTL_PRTCAP_HOST);
 }
 
 static int dwc3_qcom_runtime_resume(struct device *dev)
