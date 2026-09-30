@@ -529,7 +529,7 @@ static int dwc3_qcom_suspend(struct dwc3_qcom *qcom, pm_message_t msg)
 {
 	u32 val;
 	int i, ret;
-	bool wakeup;
+	bool wakeup, check_l2;
 
 	if (qcom->is_suspended) {
 		/*
@@ -555,10 +555,15 @@ static int dwc3_qcom_suspend(struct dwc3_qcom *qcom, pm_message_t msg)
 	else
 		wakeup = device_may_wakeup(qcom->dev);
 
-	for (i = 0; i < qcom->num_ports; i++) {
-		val = readl(qcom->qscratch_base + pwr_evnt_irq_stat_reg[i]);
-		if (!(val & PWR_EVNT_LPM_IN_L2_MASK))
-			dev_err(qcom->dev, "port-%d HS-PHY not in L2\n", i + 1);
+	/* L2 is only expected when the core leaves the PHYs powered. */
+	check_l2 = dwc3_qcom_is_host(qcom) &&
+		   (PMSG_IS_AUTO(msg) || (wakeup && !qcom->dwc.needs_full_reinit));
+	if (check_l2) {
+		for (i = 0; i < qcom->num_ports; i++) {
+			val = readl(qcom->qscratch_base + pwr_evnt_irq_stat_reg[i]);
+			if (!(val & PWR_EVNT_LPM_IN_L2_MASK))
+				dev_err(qcom->dev, "port-%d HS-PHY not in L2\n", i + 1);
+		}
 	}
 
 	if (!qcom->fw_managed) {
