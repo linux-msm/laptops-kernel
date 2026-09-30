@@ -20,6 +20,7 @@
 #include <linux/scatterlist.h>
 #include <linux/slab.h>
 #include <linux/firmware/qcom/qcom_scm.h>
+#include <linux/iommu.h>
 #include <uapi/misc/fastrpc.h>
 #include <linux/of_reserved_mem.h>
 #include <linux/bitfield.h>
@@ -331,6 +332,8 @@ struct fastrpc_channel_ctx {
 	bool secure;
 	bool unsigned_support;
 	bool poll_mode_supported;
+	/* Remoteproc has its own IOMMU; use iommu_map instead of qcom_scm_assign_mem. */
+	bool has_iommu;
 	/* Per-channel sequence counter; incremented on every context allocation */
 	atomic_t ctx_seq;
 	u64 dma_mask;
@@ -2602,9 +2605,64 @@ static const struct of_device_id fastrpc_poll_supported_machines[] __maybe_unuse
 	{},
 };
 
+static int fastrpc_remote_heap_map(struct device *rdev,
+				   struct device_node *rproc_node,
+				   phys_addr_t addr, u64 size)
+{
+	struct platform_device *rproc_pdev;
+	struct iommu_domain *domain;
+	int ret;
+
+	rproc_pdev = of_find_device_by_node(rproc_node);
+	if (!rproc_pdev) {
+		dev_err(rdev, "failed to find remoteproc platform device\n");
+		return -ENODEV;
+	}
+
+	domain = iommu_get_domain_for_dev(&rproc_pdev->dev);
+	if (!domain) {
+		put_device(&rproc_pdev->dev);
+		dev_err(rdev, "no IOMMU domain for remoteproc\n");
+		return -ENODEV;
+	}
+
+	ret = iommu_map(domain, addr, addr, size,
+			IOMMU_READ | IOMMU_WRITE, GFP_KERNEL);
+	if (ret)
+		dev_err(rdev, "failed to map remote heap phys=%pa size=%#llx err=%d\n",
+			&addr, size, ret);
+
+	put_device(&rproc_pdev->dev);
+	return ret;
+}
+
+static void fastrpc_remote_heap_unmap(struct rpmsg_device *rpdev,
+				      phys_addr_t addr, u64 size)
+{
+	struct device_node *rproc_node;
+	struct platform_device *rproc_pdev;
+	struct iommu_domain *domain;
+
+	rproc_node = of_get_parent(of_get_parent(rpdev->dev.of_node));
+	if (!rproc_node)
+		return;
+
+	rproc_pdev = of_find_device_by_node(rproc_node);
+	of_node_put(rproc_node);
+	if (!rproc_pdev)
+		return;
+
+	domain = iommu_get_domain_for_dev(&rproc_pdev->dev);
+	if (domain)
+		iommu_unmap(domain, addr, size);
+
+	put_device(&rproc_pdev->dev);
+}
+
 static int fastrpc_init_reserved_mem(struct fastrpc_channel_ctx *cctx,
 				     struct device *rdev, u32 domain_id)
 {
+	struct device_node *rproc_node;
 	struct resource res;
 	u64 src_perms;
 	int err;
@@ -2633,7 +2691,25 @@ static int fastrpc_init_reserved_mem(struct fastrpc_channel_ctx *cctx,
 		cctx->remote_heap_size = resource_size(&res);
 	}
 
-	if (!cctx->vmcount)
+	/*
+	 * On KVM-based targets the remoteproc runs in its own IOMMU domain
+	 * and the DSP can only reach memory explicitly mapped into it.
+	 * Detect that case via the "iommus" property on the remoteproc DT
+	 * node and map the carveout with iommu_map() instead of the
+	 * Gunyah-style qcom_scm_assign_mem() hyp-assign.
+	 */
+	rproc_node = of_get_parent(of_get_parent(rdev->of_node));
+	if (rproc_node) {
+		cctx->has_iommu = of_property_present(rproc_node, "iommus");
+		if (cctx->has_iommu)
+			err = fastrpc_remote_heap_map(rdev, rproc_node,
+						      res.start, resource_size(&res));
+		of_node_put(rproc_node);
+		if (err)
+			return err;
+	}
+
+	if (cctx->has_iommu || !cctx->vmcount)
 		return 0;
 
 	src_perms = BIT(QCOM_SCM_VMID_HLOS);
@@ -2830,7 +2906,10 @@ static void fastrpc_rpmsg_remove(struct rpmsg_device *rpdev)
 	if (cctx->secure_fdevice)
 		misc_deregister(&cctx->secure_fdevice->miscdev);
 
-	if (cctx->remote_heap_size && cctx->vmcount) {
+	if (cctx->has_iommu && cctx->remote_heap_size) {
+		fastrpc_remote_heap_unmap(rpdev, cctx->remote_heap_addr,
+					  cctx->remote_heap_size);
+	} else if (cctx->remote_heap_size && cctx->vmcount) {
 		u64 src_perms = 0;
 		int err, i;
 		struct qcom_scm_vmperm dst_perms;
