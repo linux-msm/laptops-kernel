@@ -570,7 +570,16 @@ static int hm1092_enum_frame_size(struct v4l2_subdev *sd,
 	return 0;
 }
 
+static int hm1092_set_fmt(struct v4l2_subdev *sd,
+			  const struct v4l2_subdev_client_info *ci,
+			  struct v4l2_subdev_state *state,
+			  struct v4l2_subdev_format *format)
+{
+	return v4l2_subdev_get_fmt(sd, state, format);
+}
+
 static int hm1092_get_selection(struct v4l2_subdev *sd,
+				const struct v4l2_subdev_client_info *ci,
 				struct v4l2_subdev_state *state,
 				struct v4l2_subdev_selection *sel)
 {
@@ -612,7 +621,7 @@ static const struct v4l2_subdev_video_ops hm1092_video_ops = {
 };
 
 static const struct v4l2_subdev_pad_ops hm1092_pad_ops = {
-	.set_fmt = v4l2_subdev_get_fmt,
+	.set_fmt = hm1092_set_fmt,
 	.get_fmt = v4l2_subdev_get_fmt,
 	.enum_mbus_code = hm1092_enum_mbus_code,
 	.enum_frame_size = hm1092_enum_frame_size,
