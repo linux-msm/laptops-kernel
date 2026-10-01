@@ -9,8 +9,6 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/gpio-keys.h>
 #include <dt-bindings/input/input.h>
-#include <dt-bindings/media/video-interfaces.h>
-#include <dt-bindings/media/video-interface-devices.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
 
@@ -24,6 +22,81 @@
 
 	aliases {
 		serial0 = &uart14;
+	};
+
+	thermal-zones {
+		soc-thermal {
+			thermal-sensors = <&pmk8550_vadc ADC5_GEN3_AMUX1_GPIO_100K_PU(1)>;
+		};
+
+		keyboard-thermal {
+			critical-action = "shutdown";
+			polling-delay-passive = <500>;
+
+			thermal-sensors = <&pmk8550_vadc ADC5_GEN3_AMUX2_GPIO_100K_PU(1)>;
+
+			trips {
+				keyboard_ec_alert: keyboard-ec-alert {
+					temperature = <57850>;
+					hysteresis = <1000>;
+					type = "passive";
+				};
+
+				keyboard-critical {
+					temperature = <73000>;
+					hysteresis = <1000>;
+					type = "critical";
+				};
+			};
+
+			cooling-maps {
+				map0 {
+					trip = <&keyboard_ec_alert>;
+					cooling-device = <&cpu0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
+							 <&cpu1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
+							 <&cpu2 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
+							 <&cpu3 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
+							 <&cpu4 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
+							 <&cpu5 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
+							 <&cpu6 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
+							 <&cpu7 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
+							 <&cpu8 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
+							 <&cpu9 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
+							 <&cpu10 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
+							 <&cpu11 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
+							 <&gpu THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+
+		backcover-thermal {
+			critical-action = "shutdown";
+			thermal-sensors = <&pmk8550_vadc ADC5_GEN3_AMUX1_THM_100K_PU(1)>;
+
+			trips {
+				backcover-critical {
+					temperature = <73000>;
+					hysteresis = <1000>;
+					type = "critical";
+				};
+			};
+		};
+
+		smb-thermal {
+			thermal-sensors = <&pmk8550_vadc ADC5_GEN3_AMUX2_THM_100K_PU(1)>;
+		};
+
+		sdx-thermal {
+			thermal-sensors = <&pmk8550_vadc ADC5_GEN3_AMUX3_THM_100K_PU(1)>;
+		};
+
+		east-thermal {
+			thermal-sensors = <&pmk8550_vadc ADC5_GEN3_AMUX4_THM_100K_PU(1)>;
+		};
+
+		west-thermal {
+			thermal-sensors = <&pmk8550_vadc ADC5_GEN3_AMUX5_THM_100K_PU(1)>;
+		};
 	};
 
 	wcd938x: audio-codec {
@@ -645,13 +718,6 @@
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
 
-		vreg_l7b_2p8: ldo7 {
-			regulator-name = "vreg_l7b_2p8";
-			regulator-min-microvolt = <2800000>;
-			regulator-max-microvolt = <2800000>;
-			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
-		};
-
 		vreg_l8b_3p0: ldo8 {
 			regulator-name = "vreg_l8b_3p0";
 			regulator-min-microvolt = <3072000>;
@@ -894,123 +960,6 @@
 			regulator-max-microvolt = <880000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
 		};
-	};
-
-	regulators-8 {
-		compatible = "qcom,pm8010-rpmh-regulators";
-		qcom,pmic-id = "m";
-
-		vdd-l1-l2-supply = <&vreg_s5j_1p2>;
-		vdd-l3-l4-supply = <&vreg_s4c_1p8>;
-		vdd-l7-supply = <&vreg_bob1>;
-
-		vreg_l1m_1p2: ldo1 {
-			regulator-name = "vreg_l1m_1p2";
-			regulator-min-microvolt = <1200000>;
-			regulator-max-microvolt = <1260000>;
-			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
-		};
-
-		vreg_l2m_1p2: ldo2 {
-			regulator-name = "vreg_l2m_1p2";
-			regulator-min-microvolt = <1200000>;
-			regulator-max-microvolt = <1260000>;
-			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
-		};
-
-		vreg_l3m_1p8: ldo3 {
-			regulator-name = "vreg_l3m_1p8";
-			regulator-min-microvolt = <1800000>;
-			regulator-max-microvolt = <1900000>;
-			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
-		};
-
-		vreg_l4m_1p8: ldo4 {
-			regulator-name = "vreg_l4m_1p8";
-			regulator-min-microvolt = <1800000>;
-			regulator-max-microvolt = <1900000>;
-			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
-		};
-
-		vreg_l5m_2p8: ldo5 {
-			regulator-name = "vreg_l5m_2p8";
-			regulator-min-microvolt = <2800000>;
-			regulator-max-microvolt = <3072000>;
-			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
-		};
-
-		vreg_l7m_2p8: ldo7 {
-			regulator-name = "vreg_l7m_2p8";
-			regulator-min-microvolt = <2800000>;
-			regulator-max-microvolt = <3072000>;
-			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
-		};
-	};
-
-};
-
-&camss {
-	status = "okay";
-};
-
-&camss_csiphy4_in_port {
-	camss_csiphy4_inep: endpoint {
-		data-lanes = <1 2>;
-		remote-endpoint = <&csiphy4_out_ep>;
-	};
-};
-
-&cci1 {
-	status = "okay";
-};
-
-&cci1_i2c1 {
-	camera@36 {
-		compatible = "ovti,ov02c10";
-		reg = <0x36>;
-
-		reset-gpios = <&tlmm 237 GPIO_ACTIVE_LOW>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&cam_rgb_default>;
-
-		clocks = <&camcc CAM_CC_MCLK4_CLK>;
-		assigned-clocks = <&camcc CAM_CC_MCLK4_CLK>;
-		assigned-clock-rates = <19200000>;
-
-		orientation = <MEDIA_ORIENTATION_FRONT>;
-
-		avdd-supply = <&vreg_l7m_2p8>;
-		dvdd-supply = <&vreg_l2m_1p2>;
-		dovdd-supply = <&vreg_l4m_1p8>;
-
-		port {
-			ov02c10_ep: endpoint {
-				data-lanes = <1 2>;
-				link-frequencies = /bits/ 64 <400000000>;
-				remote-endpoint = <&csiphy4_in_ep>;
-			};
-		};
-	};
-};
-
-&csiphy4 {
-	vdda-0p9-supply = <&vreg_l2c_0p8>;
-	vdda-1p2-supply = <&vreg_l1c_1p2>;
-
-	status = "okay";
-};
-
-&csiphy4_in_port {
-	csiphy4_in_ep: endpoint {
-		bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
-		data-lanes = <1 2>;
-		remote-endpoint = <&ov02c10_ep>;
-	};
-};
-
-&csiphy4_out_port {
-	csiphy4_out_ep: endpoint {
-		remote-endpoint = <&camss_csiphy4_inep>;
 	};
 };
 
@@ -1630,22 +1579,6 @@
 			       <72 2>, /* Secure EC I2C connection (?) */
 			       <238 1>; /* UFS Reset */
 
-	cam_rgb_default: cam-rgb-default-state {
-		mclk-pins {
-			pins = "gpio100";
-			function = "cam_aon";
-			drive-strength = <16>;
-			bias-disable;
-		};
-
-		reset-n-pins {
-			pins = "gpio237";
-			function = "gpio";
-			drive-strength = <2>;
-			bias-disable;
-		};
-	};
-
 	ec_int_n_default: ec-int-n-state {
 		pins = "gpio66";
 		function = "gpio";
@@ -1847,7 +1780,6 @@
 		drive-strength = <2>;
 		bias-disable;
 	};
-
 	wcn_wlan_bt_en: wcn-wlan-en-state {
 		pins = "gpio117", "gpio116";
 		function = "gpio";
@@ -1870,6 +1802,36 @@
 		uart14_ep: endpoint {
 			remote-endpoint = <&m2_e_uart_ep>;
 		};
+	};
+};
+
+&pmk8550_vadc {
+	channel@144 {
+		qcom,adc-tm;
+	};
+
+	channel@145 {
+		qcom,adc-tm;
+	};
+
+	channel@146 {
+		qcom,adc-tm;
+	};
+
+	channel@147 {
+		qcom,adc-tm;
+	};
+
+	channel@148 {
+		qcom,adc-tm;
+	};
+
+	channel@14a {
+		qcom,adc-tm;
+	};
+
+	channel@14b {
+		qcom,adc-tm;
 	};
 };
 
